@@ -1,0 +1,42 @@
+https://mermaid.live/
+classDiagram
+	Schedule <.. Bot
+        User <.. Bot
+    
+	class Schedule {
+		+String collegeGroup
+		+Number dayOfWeek
+		+Number lessonNumber
+		+String lesson
+		+String teacher
+		+String lessonHall
+		+Bool replacement
+		+String time
+	}
+
+	class Bot {
+		+work() Void
+		+checkToSendSchedules() User[]
+		+sendSchedules(User[] user) Void
+		+getScheduleForGroupCurrentDay(User user, String group) Schedule[]
+		+getScheduleForTeacherCurrentDay(User user, String teacher) Schedule[]
+                +getScheduleForCabinetCurrentDay(User user, String cabinet) Schedule[]
+                +getScheduleForGroupNextDay(User user, String group) Schedule[]
+		+getScheduleForTeacherNextDay(User user, String teacher) Schedule[]
+                +getScheduleForCabinetNextDay(User user, String cabinet) Schedule[]
+                +getScheduleForGroupByDay(User user, String group, Date date) Schedule[]
+		+getScheduleForTeacherByDay(User user, String teacher, Date date) Schedule[]
+                +getScheduleForCabinetByDay(User user, String cabinet, Date date) Schedule[]
+                +getScheduleForGroupsByDays(User user, String[] groups, Date from, Date to) Schedule[]
+                +getScheduleForGroupByDays(User user, String groups, Date from, Date to) Schedule[]
+                +getScheduleForTeacherByDays(User user, String teacher, Date from, Date to) Schedule[]
+                +getScheduleForCabinetByDays(User user, String cabinet, Date from, Date to) Schedule[]
+                +cancelSubscribe(User user) Void
+	}
+
+        class User {
+                +Number id
+                +subscribeOnGroup(String group) Void
+                +subscribeOnTeacher(String teacher) Void
+                +subscribeOnCabinet(String cabinet) Void
+        }
