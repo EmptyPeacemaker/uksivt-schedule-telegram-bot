@@ -1,11 +1,17 @@
+import logging
+from os import getenv
+
 import telebot
 from telebot import types
 
-bot = telebot.TeleBot("5752620985:AAHJD-DldTcy0ZfAgJoixYUinkgUAV5gfvc", parse_mode=None)
+logger = logging.Logger("main")
+
+bot = telebot.TeleBot(getenv("TG_KEY"), parse_mode=None)
 
 
 @bot.message_handler(commands=['start'])
 def start_work(message):
+    logger.info("the bot is running")
     markup = types.ReplyKeyboardMarkup(row_width=2)
     markup.add(
         types.KeyboardButton('Группа')
@@ -28,5 +34,5 @@ def foo(message):
     bot.reply_to(message, "Вы успешно подписались")
 
 
-
-bot.polling(none_stop=True)
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
