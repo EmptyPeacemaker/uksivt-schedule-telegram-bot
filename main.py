@@ -229,7 +229,7 @@ def get_timetable_text(date, timetable):
         '5': "ПТ",
         '6': "СБ"
     }
-    timetable_text = "{week} {date}\n".format(week=weeks.get(str(date.weekday() + 1)), date=date.strftime('%d.%m.%Y'))
+    timetable_text = "{week } {date}\n".format(week=weeks.get(str(date.weekday() + 1)), date=date.strftime('%d.%m.%Y'))
     for el in timetable:
         timetable_text += "-----\nПара #{number} {replace}\n{time}\nГруппа: {group}\n{lesson}\n{teacher}\nКабинет: {cabinet}\n\n".format(
             number=el.get('lesson_number'),
@@ -362,5 +362,8 @@ while True:
                 bot.send_message(user_id, text)
         status = True
     elif datetime.datetime.now().time().hour == 0:
+        GROUPS = requests.get('https://back.uksivt.com/api/v1/college_group').json()
+        TEACHERS = requests.get('https://back.uksivt.com/api/v1/teacher').json()
+        LESSON_HALL = requests.get('https://back.uksivt.com/api/v1/lesson_hall').json()
         status = False
 
