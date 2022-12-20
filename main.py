@@ -1,3 +1,4 @@
+import json
 import time
 
 import telebot
@@ -7,20 +8,30 @@ import datetime
 import asyncio
 from threading import Thread
 import math
+import os
 
 bot = telebot.TeleBot("5874469749:AAHCD2rRP3-6u7sILVYkxeVmTI3S52bEpEI")
 
 user_status = {}
+if os.path.exists('storage.json') and os.path.isfile('storage.json'):
+    user_status = json.loads(open('storage.json', 'r').read())
+
+
+def save():
+    open('storage.json', "w").write(json.dumps(user_status))
+
 
 GROUPS = requests.get('https://back.uksivt.com/api/v1/college_group').json()
 TEACHERS = requests.get('https://back.uksivt.com/api/v1/teacher').json()
 LESSON_HALL = requests.get('https://back.uksivt.com/api/v1/lesson_hall').json()
 
+
 def status__set_select_subscription(user_id, text="На какое расписание хотите подписаться?"):
     markup = types.ReplyKeyboardMarkup(row_width=1)
     markup.add(
         types.KeyboardButton('Группа'),
-        types.KeyboardButton('Преподователь')
+        types.KeyboardButton('Преподаватель'),
+        types.KeyboardButton('Вернуться в меню')
     )
     bot.send_message(user_id, text, reply_markup=markup)
     user_status[user_id]['status'] = "select_subscription"
@@ -29,7 +40,7 @@ def status__set_select_subscription(user_id, text="На какое распис�
 def status__get_select_subscription(text, user_id):
     if text == 'Группа':
         status__set_select_subscription__group(user_id)
-    elif text == 'Преподователь':
+    elif text == 'Преподаватель':
         status__set_select_subscription__teacher(user_id)
     elif text == 'Кабинет':
         pass
@@ -37,7 +48,7 @@ def status__get_select_subscription(text, user_id):
         status__set_select_subscription(user_id, "Выберите кнопку")
 
 
-def status__set_select_subscription__group(user_id, text="Напишите название группы, например 19П-1"):
+def status__set_select_subscription__group(user_id, text="Напишите название группы, например: 19П-1"):
     bot.send_message(user_id, text)
     user_status[user_id]['status'] = "select_subscription__group"
     user_status[user_id]['subscription']['type'] = 'college_group'
@@ -51,7 +62,7 @@ def status__get_select_subscription__group(text, user_id):
         status__set_select_subscription__group(user_id, "Не удалось найти совпадение, попробуйте еще раз")
 
 
-def status__set_select_subscription__teacher(user_id, text="Напишите ФИО преподователя, например Каримова Р Ф"):
+def status__set_select_subscription__teacher(user_id, text="Напишите ФИО преподователя, например: Каримова Р Ф"):
     bot.send_message(user_id, text)
     user_status[user_id]['status'] = "select_subscription__teacher"
     user_status[user_id]['subscription']['type'] = 'teacher'
@@ -66,6 +77,7 @@ def status__get_select_subscription__teacher(text, user_id):
 
 
 def status__set_menu(user_id, text="Используйте кнопки для навигации"):
+    save()
     markup = types.ReplyKeyboardMarkup(row_width=1)
     markup.add(types.KeyboardButton('Расписание'))
     if user_status[user_id].get('subscription', {}).get('type') is None:
@@ -99,7 +111,8 @@ def status__set_timetable(user_id, text="Расписание для кого п
     markup.add(
         types.KeyboardButton('Группы'),
         types.KeyboardButton('Преподователя'),
-        types.KeyboardButton('Кабинета')
+        types.KeyboardButton('Кабинета'),
+        types.KeyboardButton('Вернуться в меню')
     )
     bot.send_message(user_id, text, reply_markup=markup)
     user_status[user_id]['status'] = "timetable"
@@ -123,11 +136,11 @@ def status__set_timetable__select(user_id, text=""):
     status = user_status[user_id].get('timetable', {}).get('type')
     if text == "":
         if status == 'college_group':
-            text = "Напишите название группы, например 19П-1"
+            text = "Напишите название группы, например: 19П-1"
         elif status == 'teacher':
-            text = "Напишите ФИО преподователя, например Каримова Р Ф"
+            text = "Напишите ФИО преподователя, например: Каримова Р Ф"
         elif status == 'lesson_hall':
-            text = "Напишите номер кабинета, например 220"
+            text = "Напишите номер кабинета, например: 220"
 
     bot.send_message(user_id, text)
     user_status[user_id]['status'] = "timetable_select"
@@ -148,7 +161,8 @@ def status__set_timetable__day(user_id, text="Выберите тип рассп
         types.KeyboardButton('На сегодня'),
         types.KeyboardButton('На завтра'),
         types.KeyboardButton('На день X'),
-        types.KeyboardButton('На диапазон')
+        types.KeyboardButton('На диапазон'),
+        types.KeyboardButton('Вернуться в меню')
     )
     bot.send_message(user_id, text, reply_markup=markup)
     user_status[user_id]['status'] = "timetable_day"
@@ -172,7 +186,7 @@ def status__get_timetable__day(text, user_id):
 
 
 def status__get_timetable__day_select(user_id,
-                                      text="Напишите на какую дату необходимо расписание, например 30.12.2022"):
+                                      text="Напишите на какую дату необходимо расписание, например: 30.12.2022"):
     bot.send_message(user_id, text)
     user_status[user_id]['status'] = "timetable_day_select"
 
@@ -182,10 +196,10 @@ def status__set_timetable__day_select(text, user_id):
         user_status[user_id]['timetable']['temp'] = str(datetime.datetime.strptime(text, '%d.%m.%Y').date())
         show_timetable(user_id)
     except:
-        status__get_timetable__day_select(user_id, "Неверный формат")
+        status__get_timetable__day_select(user_id, "Неверный формат, введите снова")
 
 
-def status__get_timetable__day_range__start(user_id, text="С какой даты вывести рассписание, например 30.12.2022"):
+def status__get_timetable__day_range__start(user_id, text="С какой даты вывести рассписание, например: 30.12.2022"):
     bot.send_message(user_id, text)
     user_status[user_id]['status'] = "timetable_day_range__start"
 
@@ -198,10 +212,10 @@ def status__set_timetable__day_range__start(text, user_id):
         }
         status__get_timetable__day_range__end(user_id)
     except:
-        status__get_timetable__day_range__start(user_id, "Неверный формат")
+        status__get_timetable__day_range__start(user_id, "Неверный формат, введите снова")
 
 
-def status__get_timetable__day_range__end(user_id, text="До даты вывести рассписание, например 30.12.2022"):
+def status__get_timetable__day_range__end(user_id, text="До даты вывести рассписание, например: 30.12.2022"):
     bot.send_message(user_id, text)
     user_status[user_id]['status'] = "timetable_day_range__end"
 
@@ -217,7 +231,7 @@ def status__set_timetable__day_range__end(text, user_id):
             user_status[user_id]['timetable']['temp']['end'] = end
         show_timetable(user_id)
     except:
-        status__get_timetable__day_range__end(user_id, "Неверный формат")
+        status__get_timetable__day_range__end(user_id, "Неверный формат, введите снова")
 
 
 def get_timetable_text(date, timetable):
@@ -229,7 +243,7 @@ def get_timetable_text(date, timetable):
         '5': "ПТ",
         '6': "СБ"
     }
-    timetable_text = "{week } {date}\n".format(week=weeks.get(str(date.weekday() + 1)), date=date.strftime('%d.%m.%Y'))
+    timetable_text = "{week} {date}\n".format(week=weeks.get(str(date.weekday() + 1)), date=date.strftime('%d.%m.%Y'))
     for el in timetable:
         timetable_text += "-----\nПара #{number} {replace}\n{time}\nГруппа: {group}\n{lesson}\n{teacher}\nКабинет: {cabinet}\n\n".format(
             number=el.get('lesson_number'),
@@ -298,6 +312,9 @@ def show_timetable(user_id):
 
 @bot.message_handler(content_types=['text'])
 def message_handler(message):
+    if message.text == 'Вернуться в меню':
+        user_status[message.from_user.id]['status'] = 'menu'
+    save()
     user_id = message.from_user.id
     if message.from_user.id not in user_status:
         user_status[message.from_user.id] = {
@@ -345,7 +362,7 @@ def start_bot():
 Thread(target=start_bot, args=()).start()
 status = False
 while True:
-    time.sleep(20*1)
+    time.sleep(20 * 1)
     if datetime.datetime.now().time().hour >= 17 and status is False:
         for user_id, user in user_status.items():
             print(user_id)
@@ -366,4 +383,3 @@ while True:
         TEACHERS = requests.get('https://back.uksivt.com/api/v1/teacher').json()
         LESSON_HALL = requests.get('https://back.uksivt.com/api/v1/lesson_hall').json()
         status = False
-
